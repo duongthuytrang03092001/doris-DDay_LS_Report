@@ -97,6 +97,10 @@ h1{font-size:15px;font-weight:700;color:#1a3a6b;margin-bottom:2px}
     <span class="flbl" style="margin-left:10px">🎤 KOL</span>
     <select class="sel" id="kolSel" onchange="redraw()"><option value="All">All KOL</option></select>
   </div>
+  <div class="frow">
+    <span class="flbl">🏪 Shop</span>
+    <select class="sel" id="shopSel" onchange="redraw()" style="max-width:300px"><option value="All">All Shops</option></select>
+  </div>
 </div>
 
 <!-- KPI CARDS -->
@@ -168,12 +172,24 @@ const ALL_KOLS = ["Accesstrade,Interspace", "Adpia", "BeyondK", "Box Studio", "B
 const GCATS = ["ELHA", "FMCG", "Fashion", "Lifestyle"];
 
 // Populate selects
-const ggpEl=document.getElementById('ggpSel'), kolEl=document.getElementById('kolSel');
+const ggpEl=document.getElementById('ggpSel'), kolEl=document.getElementById('kolSel'), shopEl=document.getElementById('shopSel');
 ALL_GGPS.forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;ggpEl.appendChild(o);});
 ALL_KOLS.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;kolEl.appendChild(o);});
 
 // STATE
-let fRM='All', fDay='All', fGGP='All', fKOL='All', fKT='All', fC4Day='All';
+let fRM='All', fDay='All', fGGP='All', fKOL='All', fKT='All', fC4Day='All', fShop='All';
+
+// POPULATE SHOP DROPDOWN (depends on current GGP)
+function populateShopSel() {
+  const cur = shopEl.value;
+  const shops = [...new Set(
+    RAW.filter(r => fGGP==='All' || r[4]===fGGP).map(r=>r[5])
+  )].sort((a,b)=>a.localeCompare(b,'vi'));
+  shopEl.innerHTML = '<option value="All">All Shops</option>';
+  shops.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;shopEl.appendChild(o);});
+  shopEl.value = shops.includes(cur) ? cur : 'All';
+}
+populateShopSel();
 let ch2=null, ch3=null, ch4=null;
 
 // CLUSTER COLORS
@@ -198,14 +214,16 @@ function filtered(dayF) {
     (fRM==='All'||r[3]===fRM) &&
     (fGGP==='All'||r[4]===fGGP) &&
     (fKOL==='All'||r[1]===fKOL) &&
-    (fKT==='All'||r[2]===fKT)
+    (fKT==='All'||r[2]===fKT) &&
+    (fShop==='All'||r[5]===fShop)
   );
 }
 function filteredC4(dayF) {
   return RAW.filter(r =>
     (dayF==='All'||r[0]===dayF) &&
     (fRM==='All'||r[3]===fRM) &&
-    (fGGP==='All'||r[4]===fGGP)
+    (fGGP==='All'||r[4]===fGGP) &&
+    (fShop==='All'||r[5]===fShop)
   );
 }
 
@@ -440,7 +458,10 @@ function drawC4() {
 
 // MAIN REDRAW
 function redraw() {
+  const prevGGP = fGGP;
   fGGP = ggpEl.value; fKOL = kolEl.value;
+  if(fGGP !== prevGGP) { fShop='All'; populateShopSel(); }
+  fShop = shopEl.value;
   buildKPI();
   drawC2();
   drawC3();
